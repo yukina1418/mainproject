@@ -15,3 +15,5 @@ export class Board_File {
   @ManyToOne(() => Post)
   post: Post;
 }
+
+console.log('aaa');
