@@ -105,6 +105,7 @@ type Mutation {
   restorePost(Postid: String!): Boolean!
   Userlogin(user_email: String!, password: String!): String!
   restoreAccessToken: String!
+  logout: String!
   createPointTransaction(impUid: String!, amount: Float!): PointTransaction!
   cancelPointTransaction(impUid: String!, amount: Float!, reason: String!): PointTransaction!
   createItem(amount: Float!, pick: String!): Item!
