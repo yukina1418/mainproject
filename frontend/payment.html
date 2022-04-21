@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>결제하기</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript" src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="./tokenplz.js"></script>
+    <script>
+
+
+        async function cancelPay() {
+            const impUid = document.getElementById("UID").value
+            const amount = Number(document.getElementById("price").value)
+            const reason = document.getElementById("reason").value
+
+            const data = await axios.post(
+                "http://localhost:3000/graphql",
+                { query: `mutation {cancelPointTransaction(impUid: "${impUid}", amount: ${amount}, reason:"${reason}") {id}}`, },
+                {
+                    headers: { authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2VtYWlsIjoieXVraW5hMTQxOEBnbWFpbC5jb20iLCJpYXQiOjE2NTAyODc1NjgsImV4cCI6MTY1MDI5MTE2OH0.daT1_PBAK8kOHtC6nbTj7d1-iMLWBGGAj3XoCHPOkWk", },
+                });
+            console.log(data)
+
+
+
+        }
+
+
+        //##        멘토님 보고 계씹니까........ 아니 cors 어케 뚫고 들어갑니까....? ##
+        // 프론트단에서 못넣으면 어떻게해야하는가...
+        // async function check() {
+        //     const myAmount = Number(document.getElementById("amount").value);
+        //     const pick = document.getElementById("pick").value
+
+        //     const item = await axios.post("http://localhost:3000/graphql",
+        //         { query: `mutation {createItem(amount: ${myAmount}, pick: "${pick}") {id}}`, })
+
+        // }
+        async function mypayment() {
+            const myAmount = Number(document.getElementById("amount").value);
+            const pick = document.getElementById("pick").value
+
+            const item = await axios.post("http://localhost:3000/graphql",
+                { query: `mutation {createItem(amount: ${myAmount}, pick: "${pick}") {id}}`, })
+
+
+            // const item = await axios.post("http://localhost:3000/graphql",
+            //     { query: `mutation {createItem(amount: "${myAmount}", pick: ${pick}) {id}}`, })
+
+            const IMP = window.IMP; // 생략 가능
+            IMP.init("imp79176283"); // Example: imp00000000
+            IMP.request_pay(
+                {
+                    // param
+                    pg: "html5_inicis",
+                    pay_method: "card",
+                    merchant_uid: `${item.data.data.createItem.id}`,
+                    name: `${pick} 외 n개`,
+                    amount: `${myAmount}`,
+                    buyer_email: "yukina1418@gmail.com",
+                    buyer_name: "유도근",
+                    buyer_tel: "010-3401-7015",
+                    buyer_addr: "서울특별시 강남구 신사동",
+                    buyer_postcode: "01181",
+                    m_redirect_url: "", // 모바일 결제후 리다이렉트될 주소!!
+                },
+                async (rsp) => {
+                    // callback
+                    if (rsp.success) {
+                        // 결제 성공시
+                        console.log("======")
+                        console.log(rsp);
+                        console.log("======")
+                        const data = await axios.post(
+                            "http://localhost:3000/graphql",
+                            { query: `mutation {createPointTransaction(impUid: "${rsp.imp_uid}", amount: ${rsp.paid_amount}) {id}}`, },
+                            {
+                                headers: { authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2VtYWlsIjoieXVraW5hMTQxOEBnbWFpbC5jb20iLCJpYXQiOjE2NTAyODc1MTMsImV4cCI6MTY1MDI5MTExM30.BK2LD9W5XA0mBPSRm7-hea41QFPNev3369arKgkouuU", },
+                            });
+                        console.log("************")
+                        console.log(data);
+                        console.log("************")
+                    } else {
+                        // 결제 실패시
+                        alert("결제실패!")
+                    }
+                }
+            );
+        }
+    </script>
+</head>
+
+<body>
+
+    결제할 금액: <input type="text" id="amount" />
+    구매하는 물품 :<input type="text" id="pick" />
+    <button onclick="mypayment()">결제하기</button>
+
+    <br>
+    환불하려는 UID <input type="text" id="UID">
+    환불할 금액 <input type="text" id="price">
+    환불 사유 <input type="text" id="reason">
+    <button onclick="cancelPay()">환불하기</button>
+    <div>
+        <div>
+            결제할 금액: <input type="text" id="amount" />
+            구매하는 물품 :<input type="text" id="pick" />
+        </div>
+
+    </div>
+</body>
+
+</html>

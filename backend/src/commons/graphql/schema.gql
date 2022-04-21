@@ -1,0 +1,179 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type User {
+  user_id: String!
+  state: Boolean!
+  user_email: String!
+  user_nickname: String!
+  user_name: String!
+  user_phone: String!
+  point: Int!
+  social_site: String!
+  member_since: DateTime!
+  member_data_update: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type ProductInfo {
+  info_id: String!
+  name: String!
+  price: Int!
+  sale: Float!
+  volume: Int!
+  count: Int!
+  createAt: DateTime!
+  updateAt: DateTime!
+}
+
+type Cart {
+  id: String!
+  name: String!
+  sum: Int!
+  item: String!
+  volume: Int!
+  createAt: DateTime!
+  updateAt: DateTime!
+}
+
+type Item {
+  id: String!
+  amount: Int!
+  pick: String!
+  volume: Int!
+  createAt: DateTime!
+}
+
+type PointTransaction {
+  id: String!
+  impUid: String!
+  amount: Int!
+  checksum: Int!
+  status: POINT_TRANSACTION_STATUS_ENUM!
+  createAt: DateTime!
+}
+
+enum POINT_TRANSACTION_STATUS_ENUM {
+  PAYMENT
+  CANCELLED
+}
+
+type Post {
+  post_id: String!
+  contents: String!
+  title: String!
+  like_count: Int!
+  hit: Int!
+  create_date: DateTime!
+  update_date: DateTime!
+  postTags: [PostTag!]!
+}
+
+type PostTag {
+  id: String!
+  names: String!
+  posts: [Post!]!
+}
+
+type Query {
+  fetchUser(user_email: String!): User!
+  fetchUsers: [User!]!
+  fetchLoginUser: User!
+  fetchPost(Postid: String!): Post!
+  fetchPosts: [Post!]!
+  fetchloginPosts: [Post!]!
+  readCart(user_id: String!): Cart!
+}
+
+type Mutation {
+  createUser(createUserInput: CreateUserInput!): User!
+  updateUser(user_email: String!, updateUserInput: UpdateUserInput!): User!
+  PasswordChange(user_email: String!, password: String!): User!
+  updateLoginUser(password: String!): User!
+  updateSocialUser(updateSocilaInput: UpdateSocialInput!): User!
+  deleteLoginUser: Boolean!
+  deleteUser(Postid: String!): Boolean!
+  restoreUser(user_email: String!): Boolean!
+  createPost(createPostInput: CreatePostInput!): Post!
+  checkPost(Postid: String!): Post!
+  updatePost(Postid: String!, updatePostInput: UpdatePostInput!): Post!
+  restorePost(Postid: String!): Boolean!
+  Userlogin(user_email: String!, password: String!): String!
+  restoreAccessToken: String!
+  createPointTransaction(impUid: String!, amount: Float!): PointTransaction!
+  cancelPointTransaction(impUid: String!, amount: Float!, reason: String!): PointTransaction!
+  createItem(amount: Float!, pick: String!): Item!
+  uploadFile(files: [Upload!]!): [String!]!
+  deleteFile(bucketName: String!, fileName: String!): String!
+  createImage(createImageInput: CreateImageInput!): [String!]!
+  updateImage(updateImageInput: UpdateImageInput!): [String!]!
+  createInfo(createProductInfoInput: CreateProductInfoInput!): ProductInfo!
+  updateInfo(name: String!, updateProductInput: UpdateProductInfoInput!): ProductInfo!
+  updateCart(user_id: String!, item: String!, volume: Float!): Cart!
+  deleteCart(user_id: String!, item: String!, volume: Float!): Cart!
+  order(user_id: String!): Cart!
+}
+
+input CreateUserInput {
+  user_email: String!
+  password: String!
+  user_name: String!
+  user_phone: String!
+  user_nickname: String!
+  address: String!
+}
+
+input UpdateUserInput {
+  user_email: String!
+  password: String!
+  user_phone: String!
+  address: String!
+}
+
+input UpdateSocialInput {
+  user_nickname: String
+}
+
+input CreatePostInput {
+  contents: String!
+  title: String!
+  postTags: [String!]!
+}
+
+input UpdatePostInput {
+  contents: String
+  title: String
+  postTags: [String!]
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload
+
+input CreateImageInput {
+  dataId: String!
+  url: [String!]!
+}
+
+input UpdateImageInput {
+  dataId: String
+  url: [String!]
+}
+
+input CreateProductInfoInput {
+  name: String!
+  price: Int!
+  sale: Float!
+  volume: Int!
+}
+
+input UpdateProductInfoInput {
+  name: String
+  price: Int
+  sale: Float
+  volume: Int
+}

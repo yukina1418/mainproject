@@ -1,0 +1,32 @@
+POST https://api.iamport.kr/users/getToken
+Content-Type: application/json
+
+{
+   "imp_key": "6404604046350897",
+   "imp_secret": "d985bccc19517f42ca85d0ab922976b66b8405064561b2f5c575343d1864d967ce159d705b3b878d"
+}
+
+###
+GET http://localhost:3000/test
+Content-Type: application/json
+
+
+###
+
+GET https://api.iamport.kr/payments/imp_922546187699
+Content-Type: application/json
+authorization: 32891e754a3f7a0e95df0673ea93dfbd2c37c511
+
+###
+
+GET http://localhost:3000/tes
+Content-Type: application/json
+
+###
+GET http://localhost:3000/cancel
+Content-Type: application/json
+
+###
+
+GET http://localhost:3000/tess
+Content-Type: application/json
