@@ -17,3 +17,5 @@ export class Board_File {
 }
 
 console.log('aaa');
+
+console.log('aaa');
