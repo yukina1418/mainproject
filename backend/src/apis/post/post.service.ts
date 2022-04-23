@@ -1,6 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { getConnection, Repository } from 'typeorm';
 import { PostTag } from '../postTag/models/entities/postTag.entity';
 import { User } from '../User/models/entities/user.entity';
 import { Post } from './models/entities/post.entity';
@@ -34,6 +34,13 @@ export class PostService {
   async create({ currentUser, createPostInput }) {
     const { postTags, ...post } = createPostInput;
 
+    const userData = await getConnection()
+      .createQueryBuilder()
+      .select('user')
+      .from(User, 'user')
+      .where({ user_id: currentUser.user_id })
+      .getOne();
+
     const TagArr = [];
     for (let i = 0; i < postTags.length; i++) {
       const tagname = postTags[i].replace('#', '');
@@ -52,17 +59,17 @@ export class PostService {
       }
     }
 
-    const NewPosrt = await this.PostRepository.save({
+    const NewPost = await this.PostRepository.save({
       ...post,
       postTags: TagArr,
-      user: { user_id: currentUser.user_id },
+      writer: userData.user_nickname,
+      user: { user_id: userData.user_id },
     });
-    console.log(NewPosrt);
 
-    return NewPosrt;
+    return NewPost;
   }
 
-  async checkID({ currentUser, Postid }) {
+  async checkID({ currentUser, Postid, updatePostInput }) {
     const Post = await this.PostRepository.findOne({
       where: { post_id: Postid },
       relations: ['user'],
@@ -71,7 +78,10 @@ export class PostService {
     if (Post.user.user_id !== currentUser.user_id) {
       throw new ConflictException('해당 글의 작성자가 아닙니다.');
     } else {
-      return true;
+      return await this.PostRepository.save({
+        ...Post,
+        ...updatePostInput,
+      });
     }
   }
 

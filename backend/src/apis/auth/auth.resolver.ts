@@ -26,7 +26,7 @@ export class AuthResolver {
     private readonly cacheManager: Cache,
   ) {}
   @Mutation(() => String)
-  async Userlogin(
+  async GetAccessToken(
     @Args('user_email') user_email: string, //
     @Args('password') password: string,
   ) {
@@ -59,10 +59,10 @@ export class AuthResolver {
   }
 
   // @UseGuards(GqlAuthAccessGuard)
-  @UseGuards(GqlAuthRefreshGuard) //  <- 아 이거로 검증하려고했는데 토글을 못봤네. . .
+  //@UseGuards(GqlAuthRefreshGuard) //  <- 아 이거로 검증하려고했는데 토글을 못봤네. . .
   // 날로먹고 실패
   @Mutation(() => String)
-  async logout(
+  async deleteAccessToken(
     //
     // @CurrentUser() currentUser: any,
     @Context() context: any,

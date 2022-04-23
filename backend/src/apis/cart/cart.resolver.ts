@@ -2,10 +2,17 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CartService } from './cart.service';
 import { UpdateCartInput } from './dto/updateCart.input';
 import { Cart } from './modules/entities/cart.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER, Inject } from '@nestjs/common';
 
 @Resolver()
 export class CartResolver {
-  constructor(private readonly CartService: CartService) {}
+  constructor(
+    //
+    private readonly CartService: CartService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
+  ) {}
 
   @Query(() => Cart)
   async readCart(

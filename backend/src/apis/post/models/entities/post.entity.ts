@@ -22,11 +22,15 @@ export class Post {
 
   @Column()
   @Field(() => String)
-  contents: string;
+  title: string;
 
   @Column()
   @Field(() => String)
-  title: string;
+  contents: string;
+
+  @Column({ nullable: true })
+  @Field(() => String)
+  writer: string;
 
   @Column({ default: 0 })
   @Field(() => Int)
@@ -37,12 +41,10 @@ export class Post {
   hit: number;
 
   @CreateDateColumn()
-  @Field(() => Date)
-  create_date: Date;
+  createAt: Date;
 
   @UpdateDateColumn()
-  @Field(() => Date)
-  update_date: Date;
+  updateAt: Date;
 
   // @ManyToOne(() => Store)
   // @Field(() => Store)

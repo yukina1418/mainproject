@@ -5,12 +5,17 @@ import { Product } from '../product/models/entities/product.entity';
 import { ProductInfo } from '../productinfo/models/entities/productinfo.entity';
 import { User } from '../User/models/entities/user.entity';
 import { Cart } from './modules/entities/cart.entity';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER, Inject } from '@nestjs/common';
 
 @Injectable()
 export class CartService {
   constructor(
     @InjectRepository(Cart)
     private readonly CartRepository: Repository<Cart>,
+
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
   // async create({ user_id }) {
@@ -70,12 +75,6 @@ export class CartService {
   // }
 
   async update({ user_id, item, volume }) {
-    // const user_Cart = await this.CartRepository.createQueryBuilder()
-    //   .where({ product: item })
-    //   .getOne();
-
-    // console.log(user_Cart);
-
     const userDate = await getConnection()
       .createQueryBuilder()
       .select('user')
@@ -94,15 +93,14 @@ export class CartService {
       .where({ product: productData, user: user_id })
       .getOne();
 
-    console.log(user_Cart);
-
     if (!user_Cart) {
       const makeCart = await this.CartRepository.save({
         sum: productData.price * volume,
+        name: userDate.user_name + '의 장바구니',
         item,
         volume,
-        user: userDate,
-        product: productData,
+        user: { user_id: userDate.user_id },
+        product: { product_id: productData.product_id },
       });
 
       return makeCart;

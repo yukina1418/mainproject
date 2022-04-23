@@ -65,12 +65,11 @@ enum POINT_TRANSACTION_STATUS_ENUM {
 
 type Post {
   post_id: String!
-  contents: String!
   title: String!
+  contents: String!
+  writer: String!
   like_count: Int!
   hit: Int!
-  create_date: DateTime!
-  update_date: DateTime!
   postTags: [PostTag!]!
 }
 
@@ -80,32 +79,45 @@ type PostTag {
   posts: [Post!]!
 }
 
+type postLike {
+  postLike_id: String!
+}
+
 type Query {
   fetchUser(user_email: String!): User!
   fetchUsers: [User!]!
   fetchLoginUser: User!
-  fetchPost(Postid: String!): Post!
+  fetchPostTitle(title: String!): JSONObject!
+  fetchPostContents(contents: String!): JSONObject!
+  fetchPostWriter(writer: String!): JSONObject!
+  fetchPostOfHighHit: JSONObject!
+  fetchPostOfTheBest: JSONObject!
   fetchPosts: [Post!]!
   fetchloginPosts: [Post!]!
   readCart(user_id: String!): Cart!
 }
 
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
+
 type Mutation {
   createUser(createUserInput: CreateUserInput!): User!
   updateUser(user_email: String!, updateUserInput: UpdateUserInput!): User!
-  PasswordChange(user_email: String!, password: String!): User!
+  updatePassword(user_email: String!, password: String!): User!
   updateLoginUser(password: String!): User!
   updateSocialUser(updateSocilaInput: UpdateSocialInput!): User!
   deleteLoginUser: Boolean!
   deleteUser(Postid: String!): Boolean!
   restoreUser(user_email: String!): Boolean!
   createPost(createPostInput: CreatePostInput!): Post!
-  checkPost(Postid: String!): Post!
   updatePost(Postid: String!, updatePostInput: UpdatePostInput!): Post!
   restorePost(Postid: String!): Boolean!
-  Userlogin(user_email: String!, password: String!): String!
+  createLike(postid: String!): postLike!
+  GetAccessToken(user_email: String!, password: String!): String!
   restoreAccessToken: String!
-  logout: String!
+  deleteAccessToken: String!
   createPointTransaction(impUid: String!, amount: Float!): PointTransaction!
   cancelPointTransaction(impUid: String!, amount: Float!, reason: String!): PointTransaction!
   createItem(amount: Float!, pick: String!): Item!
