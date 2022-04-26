@@ -15,14 +15,25 @@ export class PostService {
     private readonly PostTagRepository: Repository<PostTag>,
   ) {}
 
-  async findOne({ Postid }) {
-    return await this.PostRepository.findOne({
-      where: { post_id: Postid },
+  async findOne({ post_id }) {
+    const aaa = await this.PostRepository.findOne({
+      where: { post_id },
       relations: ['postTags'],
     });
+    const qqq = { ...aaa };
+    // console.log(qqq);
+    // qqq.title = 'www';
+    // console.log(qqq);
+    // delete qqq.hit;
+
+    // console.log(qqq);
+    // const a = [];
+    // a.push(qqq);
+    // console.log(a);
+    return qqq;
   }
   async findAll() {
-    return await this.PostRepository.find({ relations: ['postTags'] });
+    return await this.PostRepository.find({ relations: ['postTags'] }); //{ relations: ['postTags'] });
   }
   //
   async logfind({ currentUser }) {
@@ -69,9 +80,9 @@ export class PostService {
     return NewPost;
   }
 
-  async checkID({ currentUser, Postid, updatePostInput }) {
+  async checkID({ currentUser, post_id, updatePostInput }) {
     const Post = await this.PostRepository.findOne({
-      where: { post_id: Postid },
+      where: { post_id },
       relations: ['user'],
     });
 
@@ -97,9 +108,9 @@ export class PostService {
     return await this.PostRepository.save(newProduct);
   }
 
-  async delete({ Postid }) {
+  async delete({ post_id }) {
     const result = await this.PostRepository.softDelete({
-      post_id: Postid,
+      post_id,
     }); // 다양한 조건으로 삭제 가능
     return result.affected ? true : false;
   }

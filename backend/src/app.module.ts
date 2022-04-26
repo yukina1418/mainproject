@@ -19,6 +19,7 @@ import type { RedisClientOptions } from 'redis';
 import * as redisStore from 'cache-manager-redis-store';
 import * as GraphQLJSON from 'graphql-type-json';
 import { PostLikeModule } from './apis/postLike/postLike.module';
+import { CommentModule } from './apis/comment/comment.module';
 
 //하위 apis의 파일 각각에서 만든 api가 해당하는 폴더의 module에 합쳐지고
 // 그것을 app.module에서 호출해서 main단에서 사용한다
@@ -28,6 +29,7 @@ import { PostLikeModule } from './apis/postLike/postLike.module';
     UserModule,
     PostModule,
     PostLikeModule,
+    CommentModule,
     AuthModule,
     pointTransactionModule,
     ItemModule,
@@ -48,7 +50,7 @@ import { PostLikeModule } from './apis/postLike/postLike.module';
       port: 3306,
       username: 'root',
       password: 'root',
-      database: 'mydocker02',
+      database: 'mainproject',
       entities: [__dirname + '/apis/**/*.entity.*'],
       synchronize: true,
       logging: true,

@@ -12,26 +12,26 @@ export class PostLikeService {
     private readonly postLikeRepository: Repository<postLike>,
   ) {}
 
-  async create({ currentUser, postid }) {
+  async create({ currentUser, post_id }) {
     const target = await getConnection()
       .createQueryBuilder()
-      .select('postlike')
-      .from(postLike, 'postlike')
-      .where({ user: currentUser.user_id, post: postid })
+      .select('postLike')
+      .from(postLike, 'postLike')
+      .where({ user: currentUser.user_id, post: post_id })
       .getOne();
 
     if (target) throw new ConflictException('추천은 1회만 가능합니다.');
 
     await this.postLikeRepository.save({
       user: currentUser.user_id,
-      post: postid,
+      post: post_id,
     });
 
     await getConnection()
       .createQueryBuilder()
       .update(Post)
       .set({ like_count: () => `like_count+1` })
-      .where({ post_id: postid })
+      .where({ post_id })
       .execute();
 
     return;

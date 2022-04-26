@@ -12,9 +12,9 @@ export class postLikeResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => postLike)
   createLike(
-    @Args('postid') postid: string,
+    @Args('post_id') post_id: string,
     @CurrentUser() currentUser: ICurrentUser,
   ) {
-    return this.postLikeService.create({ postid, currentUser });
+    return this.postLikeService.create({ post_id, currentUser });
   }
 }

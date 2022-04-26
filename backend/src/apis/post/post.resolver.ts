@@ -47,32 +47,44 @@ export class PostResolver {
   @Query(() => GraphQLJSONObject)
   async fetchPostTitle(
     //
-    @Args('title') title: string,
+    @Args('contents') contents: string,
   ) {
-    const RedisData = await this.cacheManager.get(title);
+    // const ELData = await this.elasticsearchService.search({
+    //   index: 'post',
+    //   query: {
+    //     prefix: {
+    //       title: '핏자',
+    //     },
+    //   },
+    // });
 
+    // console.log(ELData);
+
+    //return ELData;
+
+    const RedisData = await this.cacheManager.get(contents);
     console.log(RedisData);
-    if (!RedisData) {
+    console.log('ddd' + RedisData);
+    if (RedisData) {
       return RedisData;
     } else {
       const ELData = await this.elasticsearchService.search({
         index: 'post', // 테이블 위치
-        // _source: 'title', 원하는필드 지정해서 볼 수 있음
+        // _source: 'title' //원하는필드 지정해서 볼 수 있음
         // size: 1, // 갯수만큼 보여줌
         // sort: 'post_id', // 특정 테이블 기준으로 정렬 가능 역정렬은 어떻게하지?
         query: {
           //   // match_all: {},
-          match: {
-            title,
-          },
+          match: { contents },
           //   // multi_match: {
           //   //   query: Postid,
           //   //   fields: ['title', 'content'],
           //   // },
         },
       });
+      console.log(ELData.hits);
 
-      await this.cacheManager.set(title, ELData.hits, { ttl: 90 });
+      await this.cacheManager.set(contents, ELData.hits, { ttl: 20 });
 
       return ELData.hits;
     }
@@ -81,13 +93,69 @@ export class PostResolver {
     // return this.postService.findOne({ Postid });
   }
   //
+  @Query(() => [Post])
+  async fetchPostTitleWithHomework(
+    //
+    @Args('title') title: string,
+  ) {
+    const RedisData = await this.cacheManager.get(title);
+    if (RedisData) {
+      console.log('여긴 레디스');
+      return RedisData;
+    } else {
+      const ELData = await this.elasticsearchService.search({
+        index: 'post', // 테이블 위치
+
+        query: {
+          match: {
+            title,
+          },
+        },
+      });
+
+      const SettingData: Array<any> = ELData.hits.hits.map(
+        (ele) => ele._source,
+      );
+
+      for (let i = 0; i < SettingData.length; i++) {
+        SettingData[i].postTags = [];
+        for (let j = 0; j < SettingData[i].tag.length; j++) {
+          const obj = {};
+
+          obj['id'] = SettingData[i].tag[j];
+          obj['names'] = SettingData[i].name[j];
+          SettingData[i].postTags.push(obj);
+        }
+      }
+      console.log('여긴 엘라스틱');
+      await this.cacheManager.set(title, SettingData, { ttl: 30 });
+
+      return SettingData;
+    }
+  }
   //
   @Query(() => GraphQLJSONObject)
   async fetchPostContents(
     //
     @Args('contents') contents: string,
   ) {
-    return;
+    const RedisData = await this.cacheManager.get(contents);
+
+    if (RedisData) {
+      return RedisData;
+    } else {
+      const ELData = await this.elasticsearchService.search({
+        index: 'post',
+        query: {
+          match: {
+            contents,
+          },
+        },
+      });
+      await this.cacheManager.set(contents, ELData.hits, { ttl: 90 });
+
+      return ELData.hits;
+    }
   }
   //
   //
@@ -157,31 +225,28 @@ export class PostResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Post)
   async updatePost(
-    @Args('Postid') Postid: string,
+    @Args('post_id') post_id: string,
     @CurrentUser() currentUser: ICurrentUser,
     @Args('updatePostInput') updatePostInput: UpdatePostInput,
   ) {
     return this.postService.checkID({
       currentUser,
-      Postid,
+      post_id,
       updatePostInput,
     });
   }
   // true를 프론트로 반환하면 프론트는 그 값을 확인해서 수정하는 페이지로 넘겨줌
 
-  // @Mutation(() => Post)
-  // async updatePost(
-  //   @Args('Postid') Postid: string,
-  //   @Args('updatePostInput') updatePostInput: UpdatePostInput,
-  // ) {
-  //   return this.postService.update({ Postid, updatePostInput });
-  // }
   // Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api //
   @Mutation(() => Boolean)
-  deleteUser(
-    @Args('Postid') Postid: string, //
+  async deletePost(
+    @Args('post_id') post_id: string, //
   ) {
-    return this.postService.delete({ Postid });
+    await this.elasticsearchService.delete({
+      index: 'post',
+      id: post_id,
+    }); // 삭제기능
+    return this.postService.delete({ post_id });
   }
   //
   //
@@ -194,3 +259,47 @@ export class PostResolver {
   //
   //
 }
+
+// const www = await Promise.all([
+//   ELData.hits.hits.map((el) => {
+//     return new Promise((resolve) => {
+//       console.log(el._source);
+//       resolve(el._source);
+//     });
+//   }),
+// ]);
+// console.log(await Promise.all(www));
+// JSON.parse(ELData.hits.hits);
+// console.log(JSON.stringify(ELData.hits.hits));
+// console.log(ELData.hits.hits);
+// return await this.postService.findOne({ post_id: title });
+// console.log(aaa);
+// return aaa;
+// console.log(ELData.hits.hits[2]);
+// const aaa = { ...ELData.hits.hits };
+// //    console.log(typeof ELData.hits.hits);
+// const qqq = [];
+// qqq.push(ELData.hits.hits[0]._source);
+// console.log(qqq);
+// return qqq;
+// _source: 'title', 원하는필드 지정해서 볼 수 있음
+// size: 1, // 갯수만큼 보여줌
+// sort: 'post_id', // 특정 테이블 기준으로 정렬 가능 역정렬은 어떻게하지?
+// bool: {
+//   filter: [
+//     {
+//       match: {
+//         'title.keyword': '핏자',
+//       },
+//     },
+//   ],
+// }, //.keyword
+//   // match_all: {},
+
+// match: {
+//   title,
+// },
+//   // multi_match: {
+//   //   query: Postid,
+//   //   fields: ['title', 'content'],
+//   // },

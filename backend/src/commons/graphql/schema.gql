@@ -83,11 +83,19 @@ type postLike {
   postLike_id: String!
 }
 
+type Comment {
+  comment_id: String!
+  writer: String!
+  contents: String!
+  like_count: Int!
+}
+
 type Query {
   fetchUser(user_email: String!): User!
   fetchUsers: [User!]!
   fetchLoginUser: User!
-  fetchPostTitle(title: String!): JSONObject!
+  fetchPostTitle(contents: String!): JSONObject!
+  fetchPostTitleWithHomework(title: String!): [Post!]!
   fetchPostContents(contents: String!): JSONObject!
   fetchPostWriter(writer: String!): JSONObject!
   fetchPostOfHighHit: JSONObject!
@@ -109,12 +117,15 @@ type Mutation {
   updateLoginUser(password: String!): User!
   updateSocialUser(updateSocilaInput: UpdateSocialInput!): User!
   deleteLoginUser: Boolean!
-  deleteUser(Postid: String!): Boolean!
+  deleteUser(user_email: String!): Boolean!
   restoreUser(user_email: String!): Boolean!
   createPost(createPostInput: CreatePostInput!): Post!
-  updatePost(Postid: String!, updatePostInput: UpdatePostInput!): Post!
+  updatePost(post_id: String!, updatePostInput: UpdatePostInput!): Post!
+  deletePost(post_id: String!): Boolean!
   restorePost(Postid: String!): Boolean!
-  createLike(postid: String!): postLike!
+  createLike(post_id: String!): postLike!
+  createComment(postid: String!, contents: String!): Comment!
+  updateComment(post_id: String!, comment_id: String!, contents: String!): Comment!
   GetAccessToken(user_email: String!, password: String!): String!
   restoreAccessToken: String!
   deleteAccessToken: String!
