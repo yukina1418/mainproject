@@ -33,7 +33,8 @@ export class PostService {
     return qqq;
   }
   async findAll() {
-    return await this.PostRepository.find({ relations: ['postTags'] }); //{ relations: ['postTags'] });
+    return await this.PostRepository.find({ skip: 10, take: 20 });
+    // return await this.PostRepository.find({ relations: ['postTags'] }); //{ relations: ['postTags'] });
   }
   //
   async logfind({ currentUser }) {
