@@ -1,19 +1,32 @@
-import { UnprocessableEntityException, UseGuards } from '@nestjs/common';
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import {
+  UnauthorizedException,
+  UnprocessableEntityException,
+  UseGuards,
+} from '@nestjs/common';
+import { Args, Context, Mutation, Resolver } from '@nestjs/graphql';
 import * as bcrypt from 'bcrypt';
-import { GqlAuthRefreshGuard } from 'src/commons/auth/gql-auth.guard';
+import {
+  GqlAuthAccessGuard,
+  GqlAuthRefreshGuard,
+} from 'src/commons/auth/gql-auth.guard';
 import { CurrentUser, ICurrentUser } from 'src/commons/auth/gql-user-param';
 import { UserService } from '../User/user.service';
 import { AuthService } from './auth.service';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER, Inject } from '@nestjs/common';
+import { JwtAccessStrategy } from 'src/commons/auth/jwt-access.strategy';
+import * as jwt from 'jsonwebtoken';
 
 @Resolver()
 export class AuthResolver {
   constructor(
     private readonly userService: UserService,
     private readonly authService: AuthService, // 유저 서비스에 만들어놓은 api 끌어와서 쓰는 방법
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
   @Mutation(() => String)
-  async Userlogin(
+  async GetAccessToken(
     @Args('user_email') user_email: string, //
     @Args('password') password: string,
   ) {
@@ -43,5 +56,40 @@ export class AuthResolver {
     @CurrentUser() currentUser: ICurrentUser,
   ) {
     return this.authService.getAccessToken({ user: currentUser });
+  }
+
+  // @UseGuards(GqlAuthAccessGuard)
+  //@UseGuards(GqlAuthRefreshGuard) //  <- 아 이거로 검증하려고했는데 토글을 못봤네. . .
+  // 날로먹고 실패
+  @Mutation(() => String)
+  async deleteAccessToken(
+    //
+    // @CurrentUser() currentUser: any,
+    @Context() context: any,
+  ) {
+    const refresh = context.req.rawHeaders
+      .filter((ele) => {
+        return ele.match(/refresh/);
+      })[0]
+      .split('=')[1];
+
+    const access = context.req.rawHeaders
+      .filter((ele) => {
+        return ele.match(/Bearer/);
+      })[0]
+      .split(' ')[1];
+    console.log(refresh);
+    console.log(access);
+    try {
+      jwt.verify(access, 'myAccessKey');
+      jwt.verify(refresh, 'myRefreshKey');
+    } catch {
+      throw new UnauthorizedException();
+    }
+
+    await this.cacheManager.set(access, 'accessToken', { ttl: 10 });
+    await this.cacheManager.set(refresh, 'refreshToken', { ttl: 10 });
+
+    return '로그아웃에 성공했습니다';
   }
 }

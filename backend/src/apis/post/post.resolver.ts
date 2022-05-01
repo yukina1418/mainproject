@@ -6,10 +6,20 @@ import { CreatePostInput } from './dto/createPost.input';
 import { UpdatePostInput } from './dto/updatePost.input';
 import { Post } from './models/entities/post.entity';
 import { PostService } from './post.service';
+import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { GraphQLJSONObject } from 'graphql-type-json';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER, Inject } from '@nestjs/common';
 
 @Resolver()
 export class PostResolver {
-  constructor(private readonly postService: PostService) {} // 이렇게 쓰면 서비스 ts에 있는 클래스를 가져다가 쓸 수 있음
+  constructor(
+    //
+    private readonly postService: PostService,
+    private readonly elasticsearchService: ElasticsearchService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
+  ) {} // 이렇게 쓰면 서비스 ts에 있는 클래스를 가져다가 쓸 수 있음
 
   // Create Api Create Api Create Api Create Api Create Api Create Api Create Api Create Api Create Api //
   @UseGuards(GqlAuthAccessGuard)
@@ -19,7 +29,7 @@ export class PostResolver {
     @Args('createPostInput') createPostInput: CreatePostInput, // args == 주는쪽
   ) {
     return this.postService.create({
-      currentUser: currentUser.user_email,
+      currentUser,
       createPostInput,
     });
   }
@@ -34,13 +44,164 @@ export class PostResolver {
   // 6. 접속하지 않은 유저가 태그로 검색할 때
   // 7. 접속한 유저가 자신이 쓴 글을 볼 때
   // 8. 접속한 유저가 자신이 쓴 글의 갯수를 확인해야할때
-  @Query(() => Post)
-  fetchPost(
+  @Query(() => GraphQLJSONObject)
+  async fetchPostTitle(
     //
-    @Args('Postid') Postid: string,
+    @Args('contents') contents: string,
   ) {
-    return this.postService.findOne({ Postid });
+    // const ELData = await this.elasticsearchService.search({
+    //   index: 'post',
+    //   query: {
+    //     prefix: {
+    //       title: '핏자',
+    //     },
+    //   },
+    // });
+
+    // console.log(ELData);
+
+    //return ELData;
+
+    const RedisData = await this.cacheManager.get(contents);
+    console.log(RedisData);
+    console.log('ddd' + RedisData);
+    if (RedisData) {
+      return RedisData;
+    } else {
+      const ELData = await this.elasticsearchService.search({
+        index: 'post', // 테이블 위치
+        // _source: 'title' //원하는필드 지정해서 볼 수 있음
+        // size: 1, // 갯수만큼 보여줌
+        // sort: 'post_id', // 특정 테이블 기준으로 정렬 가능 역정렬은 어떻게하지?
+        query: {
+          //   // match_all: {},
+          match: { contents },
+          //   // multi_match: {
+          //   //   query: Postid,
+          //   //   fields: ['title', 'content'],
+          //   // },
+        },
+      });
+      console.log(ELData.hits);
+
+      await this.cacheManager.set(contents, ELData.hits, { ttl: 20 });
+
+      return ELData.hits;
+    }
+
+    // console.log(JSON.stringify(post.hits.hits, null, ' '));
+    // return this.postService.findOne({ Postid });
   }
+  //
+  @Query(() => [Post])
+  async fetchPostTitleWithHomework(
+    //
+    @Args('title') title: string,
+  ) {
+    const RedisData = await this.cacheManager.get(title);
+    if (RedisData) {
+      console.log('여긴 레디스');
+      return RedisData;
+    } else {
+      const ELData = await this.elasticsearchService.search({
+        index: 'post', // 테이블 위치
+
+        query: {
+          match: {
+            title,
+          },
+        },
+      });
+
+      //      structuredClone(ELData);
+
+      const SettingData: Array<any> = ELData.hits.hits.map(
+        (ele) => ele._source,
+      );
+
+      for (let i = 0; i < SettingData.length; i++) {
+        SettingData[i].postTags = [];
+        for (let j = 0; j < SettingData[i].tag.length; j++) {
+          const obj = {};
+
+          obj['id'] = SettingData[i].tag[j];
+          obj['names'] = SettingData[i].name[j];
+          SettingData[i].postTags.push(obj);
+        }
+      }
+      console.log('여긴 엘라스틱');
+      await this.cacheManager.set(title, SettingData, { ttl: 30 });
+
+      return SettingData;
+    }
+  }
+  //
+  @Query(() => GraphQLJSONObject)
+  async fetchPostContents(
+    //
+    @Args('contents') contents: string,
+  ) {
+    const RedisData = await this.cacheManager.get(contents);
+
+    if (RedisData) {
+      return RedisData;
+    } else {
+      const ELData = await this.elasticsearchService.search({
+        index: 'post',
+        query: {
+          match: {
+            contents,
+          },
+        },
+      });
+      await this.cacheManager.set(contents, ELData.hits, { ttl: 90 });
+
+      return ELData.hits;
+    }
+  }
+  //
+  //
+  @Query(() => GraphQLJSONObject)
+  async fetchPostWriter(
+    //
+    @Args('writer') writer: string,
+  ) {
+    return;
+  }
+  //
+  //
+  @Query(() => GraphQLJSONObject)
+  async fetchPostOfHighHit() {
+    const ELData = await this.elasticsearchService.search({
+      index: 'post',
+      size: 10,
+      query: {
+        bool: {
+          filter: { range: { createat: { gte: '2022-02-08' } } }, // 특정 날짜 이후부터 검색 가능 lte도 쓰면 gte부터 lte까지도 가능
+        },
+      },
+    });
+
+    await this.cacheManager.set('조회수 젤 높은거', ELData.hits, { ttl: 90 });
+
+    return ELData;
+  }
+  //
+  //
+  @Query(() => GraphQLJSONObject)
+  async fetchPostOfTheBest() {
+    const ELData = await this.elasticsearchService.search({
+      index: 'post', // 테이블 위치
+      // _source: 'title', 원하는필드 지정해서 볼 수 있음
+      size: 10, // 갯수만큼 보여줌
+      sort: 'like_count', // 특정 테이블 기준으로 정렬 가능 역정렬은 어떻게하지?
+      query: {
+        match_all: {},
+      },
+    });
+    return;
+  }
+  //
   //
   //
   @Query(() => [Post])
@@ -65,30 +226,29 @@ export class PostResolver {
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Post)
-  async checkPost(
+  async updatePost(
+    @Args('post_id') post_id: string,
     @CurrentUser() currentUser: ICurrentUser,
-    @Args('Postid') Postid: string,
+    @Args('updatePostInput') updatePostInput: UpdatePostInput,
   ) {
     return this.postService.checkID({
-      currentUser: currentUser.user_email,
-      Postid,
+      currentUser,
+      post_id,
+      updatePostInput,
     });
   }
   // true를 프론트로 반환하면 프론트는 그 값을 확인해서 수정하는 페이지로 넘겨줌
 
-  @Mutation(() => Post)
-  async updatePost(
-    @Args('Postid') Postid: string,
-    @Args('updatePostInput') updatePostInput: UpdatePostInput,
-  ) {
-    return this.postService.update({ Postid, updatePostInput });
-  }
   // Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api Delete Api //
   @Mutation(() => Boolean)
-  deleteUser(
-    @Args('Postid') Postid: string, //
+  async deletePost(
+    @Args('post_id') post_id: string, //
   ) {
-    return this.postService.delete({ Postid });
+    await this.elasticsearchService.delete({
+      index: 'post',
+      id: post_id,
+    }); // 삭제기능
+    return this.postService.delete({ post_id });
   }
   //
   //
@@ -101,3 +261,47 @@ export class PostResolver {
   //
   //
 }
+
+// const www = await Promise.all([
+//   ELData.hits.hits.map((el) => {
+//     return new Promise((resolve) => {
+//       console.log(el._source);
+//       resolve(el._source);
+//     });
+//   }),
+// ]);
+// console.log(await Promise.all(www));
+// JSON.parse(ELData.hits.hits);
+// console.log(JSON.stringify(ELData.hits.hits));
+// console.log(ELData.hits.hits);
+// return await this.postService.findOne({ post_id: title });
+// console.log(aaa);
+// return aaa;
+// console.log(ELData.hits.hits[2]);
+// const aaa = { ...ELData.hits.hits };
+// //    console.log(typeof ELData.hits.hits);
+// const qqq = [];
+// qqq.push(ELData.hits.hits[0]._source);
+// console.log(qqq);
+// return qqq;
+// _source: 'title', 원하는필드 지정해서 볼 수 있음
+// size: 1, // 갯수만큼 보여줌
+// sort: 'post_id', // 특정 테이블 기준으로 정렬 가능 역정렬은 어떻게하지?
+// bool: {
+//   filter: [
+//     {
+//       match: {
+//         'title.keyword': '핏자',
+//       },
+//     },
+//   ],
+// }, //.keyword
+//   // match_all: {},
+
+// match: {
+//   title,
+// },
+//   // multi_match: {
+//   //   query: Postid,
+//   //   fields: ['title', 'content'],
+//   // },

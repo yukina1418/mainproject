@@ -6,9 +6,15 @@ import { User } from '../User/models/entities/user.entity';
 import { Post } from './models/entities/post.entity';
 import { PostResolver } from './post.resolver';
 import { PostService } from './post.service';
+import { ElasticsearchModule } from '@nestjs/elasticsearch';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, PostTag, User])],
+  imports: [
+    TypeOrmModule.forFeature([Post, PostTag, User]),
+    ElasticsearchModule.register({
+      node: 'http://elasticsearch:9200',
+    }),
+  ],
   providers: [
     PostService, //
     PostResolver,

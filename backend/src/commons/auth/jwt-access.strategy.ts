@@ -1,24 +1,40 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { User } from 'src/apis/User/models/entities/user.entity';
 import { Repository } from 'typeorm';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER, Inject } from '@nestjs/common';
 
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(Strategy, 'access') {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {
     super({
       //
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: 'myAccessKey',
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload) {
+  async validate(req, payload) {
+    const rawHeadersInAccessToken = req.rawHeaders
+      .filter((ele) => {
+        return ele.match(/Bearer/);
+      })[0]
+      .split(' ')[1];
+
+    const check = await this.cacheManager.get(rawHeadersInAccessToken);
+
+    if (check) throw new UnauthorizedException();
+
     const user = await this.userRepository
       .createQueryBuilder()
       .where({ user_email: payload.user_email })
@@ -37,3 +53,12 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'access') {
 // 컨스트럭터가 1번, 검증부
 // 검증이 완료가 되면 2번, validate가 실행된다
 // payload는 복호화된 정보를 받아온다
+// const redisAccessToken = await this.cacheManager.get('accessToken');
+// const headersInAccessToken = req.headers.authorization.split(' ')[1];
+// if (!(await this.cacheManager.get(headersInAccessToken)))
+//   throw new UnauthorizedException();
+// if (redisAccessToken === headersInAccessToken)
+//   throw new UnauthorizedException();
+
+// console.log(headersInAccessToken);
+// console.log(redisAccessToken);

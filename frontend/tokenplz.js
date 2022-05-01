@@ -11,3 +11,32 @@ async function api() {
   });
   console.log(getToken.data.response);
 }
+
+,
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "fields": {
+          "keyword": { "type": "keyword" }
+        }
+      },
+      "contents": {
+        "type": "text",
+        "fields": {
+          "keyword": { "type": "keyword" }
+        }
+      },
+      "writer": {
+        "type": "text",
+        "fields": {
+          "keyword": { "type": "keyword" }
+        }
+      },
+      "tag": { "type": "nested" },
+      "name": { "type": "nested" },
+      "hit": { "type": "long" },
+      "like_count": { "type": "short" },
+      "post_id": { "type": "keyword" }
+    }
+  }

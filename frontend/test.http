@@ -30,3 +30,7 @@ Content-Type: application/json
 
 GET http://localhost:3000/tess
 Content-Type: application/json
+
+###
+GET http://localhost:9200/mypost/_search?pretty
+Content-Type: application/json

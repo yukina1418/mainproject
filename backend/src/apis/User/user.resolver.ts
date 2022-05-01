@@ -53,7 +53,7 @@ export class UserResolver {
   //
   //
   @Mutation(() => User)
-  async PasswordChange(
+  async updatePassword(
     @Args('user_email') user_email: string,
     @Args('password') password: string,
   ) {

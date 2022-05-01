@@ -31,6 +31,8 @@ export class AuthService {
       'http://localhost:5500/main-project/frontend/login/index.html',
     );
   }
+
+  // blackList({}) {}
 }
 
 // expiresIn 이건 토큰의 만료기간을 이야기한다

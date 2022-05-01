@@ -1,5 +1,5 @@
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { Module } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Connection } from 'typeorm';
@@ -15,15 +15,21 @@ import { ProductModule } from './apis/product/product.module';
 import { ProductInfoModule } from './apis/productinfo/productinfo.module';
 import { SubscriptionModule } from './apis/subscription/subscription.module';
 import { UserModule } from './apis/User/user.module';
+import type { RedisClientOptions } from 'redis';
+import * as redisStore from 'cache-manager-redis-store';
+import * as GraphQLJSON from 'graphql-type-json';
+import { PostLikeModule } from './apis/postLike/postLike.module';
+import { CommentModule } from './apis/comment/comment.module';
 
 //하위 apis의 파일 각각에서 만든 api가 해당하는 폴더의 module에 합쳐지고
 // 그것을 app.module에서 호출해서 main단에서 사용한다
 
 @Module({
   imports: [
-    // SubscriptionModule,
     UserModule,
     PostModule,
+    PostLikeModule,
+    CommentModule,
     AuthModule,
     pointTransactionModule,
     ItemModule,
@@ -40,16 +46,22 @@ import { UserModule } from './apis/User/user.module';
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost',
+      host: 'my-database',
       port: 3306,
       username: 'root',
-      password: '5515',
+      password: 'root',
       database: 'mainproject',
       entities: [__dirname + '/apis/**/*.entity.*'],
       synchronize: true,
       logging: true,
       retryAttempts: 30,
       retryDelay: 5000,
+      timezone: 'Z',
+    }),
+    CacheModule.register<RedisClientOptions>({
+      store: redisStore,
+      url: 'redis://my-redis:6379',
+      isGlobal: true,
     }),
   ],
   // controllers: [AppController],

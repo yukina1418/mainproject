@@ -4,7 +4,6 @@ import { User } from 'src/apis/User/models/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -13,35 +12,20 @@ import {
 
 @ObjectType()
 @Entity()
-export class Comment {
+export class postLike {
   @PrimaryGeneratedColumn('uuid')
   @Field(() => String)
-  comment_id: string;
+  postLike_id: string;
 
-  @Column()
-  @Field(() => String)
-  writer: string;
+  @ManyToOne(() => User)
+  user: User;
 
-  @Column()
-  @Field(() => String)
-  contents: string;
-
-  @Column({ default: 0 })
-  @Field(() => Int)
-  like_count: number;
+  @ManyToOne(() => Post)
+  post: Post;
 
   @CreateDateColumn()
   createAt: Date;
 
   @UpdateDateColumn()
   updateAt: Date;
-
-  @DeleteDateColumn()
-  deleteAt: Date;
-
-  @ManyToOne(() => Post)
-  post: Post;
-
-  @ManyToOne(() => User)
-  user: User;
 }
