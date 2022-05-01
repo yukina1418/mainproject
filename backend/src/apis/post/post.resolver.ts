@@ -113,6 +113,8 @@ export class PostResolver {
         },
       });
 
+      //      structuredClone(ELData);
+
       const SettingData: Array<any> = ELData.hits.hits.map(
         (ele) => ele._source,
       );
